@@ -167,6 +167,8 @@ void findMLP(Float_t phantomSize = 200, Float_t rotation = -1, Float_t spotsize 
    double      track_uncert[4];
    int         a; // iterator for matrix operations
 
+   // Spot size is defined at 100 mm upstream for the trackers, with a 2 mrad divergence
+   // This is a parametric calculation of the beam spot size at the X0 position
    if (spotsize < 0) spotSizeAtX0 = 3.15;
    else              spotSizeAtX0 = 0.9869 * spotsize + 0.1985;
 
@@ -251,14 +253,14 @@ void findMLP(Float_t phantomSize = 200, Float_t rotation = -1, Float_t spotsize 
          wet = wepl - splineWater->Eval(residualEnergy);
          w = wet / wepl;
          w2 = pow(wet / wepl, 2);
-         
-         AX = exp(2.9143 - 5.5692 * w - 1.4734 * w2 + 1.2822 * w*w2);
-         AP = exp(2.4946 - 8.0676 * w + 4.2200 * w2 - 3.2835 * w*w2);
+        
+         AX = exp(2.5073 - 6.3858*w + 0.4913*w2);
+         AP = exp(1.8175 - 5.9708*w - 0.8158*w2); 
          
          dxy = sqrt(pow(P2prime.X(), 2) + pow(P2prime.Y(), 2));
          angle = fabs(atan2(dxy,1)) * 1000;
 
-         sigmaFilter = 21 + 280 * w2 - 515 * pow(w2,2) + 410 * pow(w2,3);
+         sigmaFilter = exp(2.18 + 8.08*w - 12.25*w2 + 7.07*pow(w,3));
          
          if (hResEnergy->GetEntries() > 5) {
             energyFilter = hResEnergy->GetMean() * 0.9;
@@ -457,8 +459,7 @@ void findMLP(Float_t phantomSize = 200, Float_t rotation = -1, Float_t spotsize 
 
             X2prime = X2 - X0tps - phantomSize * P0tps;
 
-            X0LPM = X2prime * AX/(pow(spotSizeAtX0,-2)+AX) - P2prime * AP/(pow(spotSizeAtX0,-2)+AX) * phantomSize;
-            X0LPM += X0tps;
+            X0LPM = X2prime * AX/(pow(spotSizeAtX0,-2)+AX) - P2prime * AP/(pow(spotSizeAtX0,-2)+AX) * phantomSize + X0tps;
             X0LPM.SetZ(0);
 
             X0err = X0LPM - X0;
